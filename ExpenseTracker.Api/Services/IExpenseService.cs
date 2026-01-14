@@ -9,5 +9,7 @@ namespace ExpenseTracker.Api.Services
         Task<Expense> CreateExpenseAsync(Expense expense);
         Task<Expense?> UpdateExpenseAsync(Guid id, Expense expense);
         Task<bool> DeleteExpenseAsync(Guid id);
+        Task<IEnumerable<Expense>> GetTravelExpensesAsync();
+        Task<IEnumerable<object>> GetMonthlyExpensesAsync();
     }
 }

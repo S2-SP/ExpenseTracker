@@ -1,0 +1,33 @@
+ # .NET build outputs
+bin/
+obj/
+*.exe
+*.dll
+*.pdb
+*.log
+
+# User-specific files
+*.user
+*.vs/
+
+# Visual Studio Code settings
+.vscode/
+
+# EF Core database files (SQLite, if used)
+*.db
+
+# AppSettings secrets
+appsettings.Development.json
+appsettings.Local.json
+
+# Node / React frontend
+frontend/node_modules/
+frontend/build/
+frontend/.env
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# JetBrains IDE files
+.idea/

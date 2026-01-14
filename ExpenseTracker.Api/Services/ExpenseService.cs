@@ -1,56 +1,84 @@
+using ExpenseTracker.Api.Data;
 using ExpenseTracker.Api.Models;
+using Microsoft.EntityFrameworkCore;
 
 namespace ExpenseTracker.Api.Services
 {
     public class ExpenseService : IExpenseService
     {
         private readonly List<Expense> _expenses = new();
-
-        public Task<IEnumerable<Expense>> GetAllExpensesAsync()
+        private readonly AppDbContext _context;
+        public ExpenseService(AppDbContext context)
         {
-            return Task.FromResult(_expenses.AsEnumerable());
+            _context = context;
         }
 
-        public Task<Expense?> GetExpenseByIdAsync(Guid id)
+        public async Task<IEnumerable<Expense>> GetAllExpensesAsync()
         {
-            var expense = _expenses.FirstOrDefault(e => e.Id == id);
-            return Task.FromResult(expense);
+            return await _context.Expenses.ToListAsync();
         }
 
-        public Task<Expense> CreateExpenseAsync(Expense expense)
+        public async Task<Expense?> GetExpenseByIdAsync(Guid id)
+        {
+            return await _context.Expenses.FindAsync(id);
+        }
+
+        public async Task<Expense> CreateExpenseAsync(Expense expense)
         {
             expense.Id = Guid.NewGuid();
-            _expenses.Add(expense);
-            return Task.FromResult(expense);
+            _context.Expenses.Add(expense);
+            await _context.SaveChangesAsync();
+            return expense;
         }
 
-        public Task<Expense?> UpdateExpenseAsync(Guid id, Expense expense)
+        public async Task<Expense?> UpdateExpenseAsync(Guid id, Expense expense)
         {
-            var existingExpense = _expenses.FirstOrDefault(e => e.Id == id);
+            var existingExpense = await _context.Expenses.FindAsync(id);
             if (existingExpense == null)
             {
-                return Task.FromResult<Expense?>(null);
-            }
+                throw new KeyNotFoundException($"Expense with ID {id} not found.");
+            }           
 
             existingExpense.Amount = expense.Amount;
             existingExpense.Category = expense.Category;
             existingExpense.Date = expense.Date;
             existingExpense.Description = expense.Description;
             existingExpense.IsTravel = expense.IsTravel;
-
-            return Task.FromResult(existingExpense);
+            
+            await _context.SaveChangesAsync();
+            return existingExpense ;
         }
 
-        public Task<bool> DeleteExpenseAsync(Guid id)
+        public async Task<bool> DeleteExpenseAsync(Guid id)
         {
-            var expense = _expenses.FirstOrDefault(e => e.Id == id);
+            var expense = await _context.Expenses.FindAsync(id);
             if (expense == null)
             {
-                return Task.FromResult(false);
+                return false;
             }
+            _context.Expenses.Remove(expense);
+            await _context.SaveChangesAsync();
+            return true;
+        }
 
-            _expenses.Remove(expense);
-            return Task.FromResult(true);
+        public async Task<IEnumerable<object>> GetMonthlyExpensesAsync()
+        {
+            return await _context.Expenses
+                .GroupBy(e => new { e.Date.Year, e.Date.Month })
+                .Select(g => new
+                {
+                    Year = g.Key.Year,
+                    Month = g.Key.Month,
+                    Total = g.Sum(x => x.Amount)
+                })
+                .ToListAsync();
+        }
+
+        public async Task<IEnumerable<Expense>> GetTravelExpensesAsync()
+        {
+            return await _context.Expenses
+                .Where(e => e.IsTravel)
+                .ToListAsync();
         }
     }
 }

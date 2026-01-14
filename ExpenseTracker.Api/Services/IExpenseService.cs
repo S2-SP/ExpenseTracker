@@ -11,5 +11,8 @@ namespace ExpenseTracker.Api.Services
         Task<bool> DeleteExpenseAsync(Guid id);
         Task<IEnumerable<Expense>> GetTravelExpensesAsync();
         Task<IEnumerable<object>> GetMonthlyExpensesAsync();
+        Task<IEnumerable<object>> GetDailyExpensesAsync();
+Task<IEnumerable<object>> GetAnnualExpensesAsync();
+
     }
 }

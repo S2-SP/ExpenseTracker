@@ -80,5 +80,30 @@ namespace ExpenseTracker.Api.Services
                 .Where(e => e.IsTravel)
                 .ToListAsync();
         }
+
+        public async Task<IEnumerable<object>> GetDailyExpensesAsync()
+        {
+            return await _context.Expenses
+                .GroupBy(e => e.Date.Date)
+                .Select(g => new
+                {
+                    Date = g.Key,
+                    Total = g.Sum(x => x.Amount)
+                })
+                .ToListAsync();
+        }
+
+        public async Task<IEnumerable<object>> GetAnnualExpensesAsync()
+        {
+            return await _context.Expenses
+                .GroupBy(e => e.Date.Year)
+                .Select(g => new
+                {
+                    Year = g.Key,
+                    Total = g.Sum(x => x.Amount)
+                })
+                .ToListAsync();
+        }
+
     }
 }

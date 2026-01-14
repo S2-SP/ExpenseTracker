@@ -65,5 +65,32 @@ namespace ExpenseTracker.Api.Controllers
             }
             return NoContent();
         }
+         [HttpGet("daily")]
+        public async Task<IActionResult> GetDailyExpenses()
+        {
+            var result = await _expenseService.GetDailyExpensesAsync();
+            return Ok(result);
+        }
+
+        [HttpGet("monthly")]
+        public async Task<IActionResult> GetMonthlyExpenses()
+        {
+            var result = await _expenseService.GetMonthlyExpensesAsync();
+            return Ok(result);
+        }
+
+        [HttpGet("annual")]
+        public async Task<IActionResult> GetAnnualExpenses()
+        {
+            var result = await _expenseService.GetAnnualExpensesAsync();
+            return Ok(result);
+        }
+
+        [HttpGet("travel")]
+        public async Task<IActionResult> GetTravelExpenses()
+        {
+            var result = await _expenseService.GetTravelExpensesAsync();
+            return Ok(result);
+        }
     }
 }

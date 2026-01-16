@@ -3,7 +3,9 @@ import type { Expense } from "../api/api";
 import { fetchAllExpenses, fetchDailyExpenses, fetchMonthlyExpenses, fetchAnnualExpenses, fetchTravelExpenses, addExpense, updateExpense, deleteExpense } from "../api/api";
 import ExpenseChart from "./ExpenseChart";
 import ExpenseModal from "../modal/ExpenseModal";
-import { Container, Typography, Button, Table, TableHead, TableBody, TableRow, TableCell, Box } from "@mui/material";
+import { Container, Typography, Button, Table, TableHead, TableBody, TableRow, TableCell, Box, Grid } from "@mui/material";
+import StatCard from "./StatCard";
+//import ExpensesTable from "./ExpensesTable";
 
 const Dashboard: React.FC = () => {
   const [expenses, setExpenses] = useState<Expense[]>([]);
@@ -11,65 +13,83 @@ const Dashboard: React.FC = () => {
   const [monthly, setMonthly] = useState<any[]>([]);
   const [annual, setAnnual] = useState<any[]>([]);
   const [travel, setTravel] = useState<Expense[]>([]);
-  const [modalOpen, setModalOpen] = useState(false);
-  const [editExpense, setEditExpense] = useState<Expense | undefined>();
+
 
   const loadData = async () => {
-    setExpenses(await fetchAllExpenses());
-    setDaily(await fetchDailyExpenses());
-    setMonthly(await fetchMonthlyExpenses());
-    setAnnual(await fetchAnnualExpenses());
-    setTravel(await fetchTravelExpenses());
+    try{
+      setExpenses(await fetchAllExpenses());
+      setDaily(await fetchDailyExpenses());
+      setMonthly(await fetchMonthlyExpenses());
+      setAnnual(await fetchAnnualExpenses());
+      setTravel(await fetchTravelExpenses());
+    }catch(error){
+      console.error("Error loading data:", error);
+    } 
+
   };
 
   useEffect(() => { loadData(); }, []);
+  const total = expenses.reduce((sum, e) => sum + e.amount, 0);
 
-  const handleAdd = async (expense: Omit<Expense, "id">) => { await addExpense(expense); loadData(); };
-  const handleUpdate = async (expense: Omit<Expense, "id">) => { if(editExpense){ await updateExpense(editExpense.id, expense); loadData(); } };
-  const handleDelete = async (id: string) => { if(confirm("Delete this expense?")) { await deleteExpense(id); loadData(); } };
+const currentMonth = new Date().getMonth();
+const currentYear = new Date().getFullYear();
+
+const monthTotal = expenses
+  .filter(e => {
+    const d = new Date(e.date);
+    return d.getMonth() === currentMonth && d.getFullYear() === currentYear;
+  })
+  .reduce((sum, e) => sum + e.amount, 0);
+
+const travelTotal = expenses
+  .filter(e => e.isTravel)
+  .reduce((sum, e) => sum + e.amount, 0);
+
+const uniqueDays = new Set(expenses.map(e => e.date.slice(0, 10))).size;
+const dailyAvg = uniqueDays > 0 ? total / uniqueDays : 0;
+
 
   return (
     <Container>
       <Typography variant="h4" gutterBottom>Expense Tracker Dashboard</Typography>
 
+      <Grid container spacing={3} mb={3}>
+        <Grid xs={12} md={3}><StatCard label="Total Expenses" value={`$${total}`} /></Grid>
+        <Grid xs={12} md={3}><StatCard label="This Month" value={`$${monthTotal}`} /></Grid>
+        <Grid xs={12} md={3}><StatCard label="Travel" value={`$${travelTotal}`} /></Grid>
+        <Grid xs={12} md={3}><StatCard label="Avg / Day" value={`$${dailyAvg}`} /></Grid>
+      </Grid>
+
+
       {/* Charts */}
-      <ExpenseChart data={daily} xKey="Date" yKey="Total" title="Daily Expenses" />
-      <ExpenseChart data={monthly} xKey="Month" yKey="Total" title="Monthly Expenses" />
-      <ExpenseChart data={annual} xKey="Year" yKey="Total" title="Annual Expenses" />
-      <ExpenseChart data={travel} xKey="description" yKey="amount" title="Travel Expenses" />
+    <Grid container spacing={3}>
+  {/* Daily → Bar */}
+      <Grid xs={12} md={6}>
+        <ExpenseChart data={daily} xKey="date" yKey="total" title="Daily Expenses" type="bar" />
+      </Grid>
 
-      {/* Table */}
-      <Box mt={4} mb={2} display="flex" justifyContent="space-between" alignItems="center">
-        <Typography variant="h6">All Expenses</Typography>
-        <Button variant="contained" color="success" onClick={() => { setEditExpense(undefined); setModalOpen(true); }}>Add Expense</Button>
-      </Box>
-      <Table>
-        <TableHead>
-          <TableRow>
-            <TableCell>Date</TableCell>
-            <TableCell>Category</TableCell>
-            <TableCell>Amount</TableCell>
-            <TableCell>Description</TableCell>
-            <TableCell>Actions</TableCell>
-          </TableRow>
-        </TableHead>
-        <TableBody>
-          {expenses.map(e => (
-            <TableRow key={e.id}>
-              <TableCell>{e.date.slice(0,10)}</TableCell>
-              <TableCell>{e.category}</TableCell>
-              <TableCell>{e.amount}</TableCell>
-              <TableCell>{e.description}</TableCell>
-              <TableCell>
-                <Button variant="contained" color="primary" size="small" onClick={() => { setEditExpense(e); setModalOpen(true); }}>Update</Button>
-                <Button variant="contained" color="error" size="small" onClick={() => handleDelete(e.id)} style={{ marginLeft: 8 }}>Delete</Button>
-              </TableCell>
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
+      {/* Monthly → Line */}
+      <Grid xs={12} md={6}>
+        <ExpenseChart data={monthly} xKey="month" yKey="total" title="Monthly Expenses" type="line" />
+      </Grid>
 
-      <ExpenseModal open={modalOpen} onClose={() => setModalOpen(false)} onSave={editExpense ? handleUpdate : handleAdd} initialData={editExpense} />
+      {/* Annual → Line */}
+      <Grid xs={12} md={6}>
+        <ExpenseChart data={annual} xKey="year" yKey="total" title="Annual Expenses" type="line" />
+      </Grid>
+
+      {/* Travel → Pie */}
+      <Grid xs={12} md={6}>
+        <ExpenseChart
+          data={travel}
+          pieNameKey="category"
+          pieValueKey="amount"
+          title="Travel Expenses by Category"
+          type="pie"
+        />
+      </Grid>
+    </Grid>
+
     </Container>
   );
 };

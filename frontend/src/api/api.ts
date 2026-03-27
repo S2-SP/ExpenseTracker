@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5224/api/Expense';
+const API_BASE_URL = import.meta.env.VITE_API_URL;
 
 export type Expense = {
   id: string;

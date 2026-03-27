@@ -3,7 +3,7 @@ import {
   BarChart, Bar, LineChart, Line, PieChart, Pie,
   Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer
 } from "recharts";
-import { Box, Typography, Paper, Fade } from "@mui/material";
+import { Box, Typography, Paper, Fade, useMediaQuery, useTheme } from "@mui/material";
 
 interface ExpenseChartProps {
   data: any[];
@@ -11,65 +11,66 @@ interface ExpenseChartProps {
   yKey?: string;
   title: string;
   type: "bar" | "line" | "pie";
-  pieNameKey?: string; // for Pie chart category
-  pieValueKey?: string; // for Pie chart value
+  pieNameKey?: string;
+  pieValueKey?: string;
 }
 
 const COLORS = ["#1976d2", "#ff9800", "#4caf50", "#e91e63", "#9c27b0", "#00bcd4"];
 
 const ExpenseChart: React.FC<ExpenseChartProps> = ({
-  data,
-  xKey,
-  yKey,
-  title,
-  type,
-  pieNameKey,
-  pieValueKey
+  data, xKey, yKey, title, type, pieNameKey, pieValueKey
 }) => {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
+  const chartHeight = isMobile ? 240 : 300;
   const hasData = data && data.length > 0;
 
   return (
     <Fade in timeout={600}>
       <Paper
-        elevation={3}
+        elevation={2}
         sx={{
-          p: 2,
+          p: { xs: 1.5, sm: 2 },
           borderRadius: 3,
-          height: 350,
+          height: chartHeight + 60,
           display: "flex",
-          flexDirection: "column"
+          flexDirection: "column",
         }}
       >
-        <Typography variant="h6" fontWeight={600} mb={1}>
+        <Typography variant="subtitle1" fontWeight={600} mb={1}>
           {title}
         </Typography>
 
         {hasData ? (
           <Box flex={1}>
             <ResponsiveContainer width="100%" height="100%">
-              {type === "bar" && xKey && yKey && (
-                <BarChart data={data}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey={xKey} />
-                  <YAxis />
-                  <Tooltip />
+              {type === "bar" && xKey && yKey ? (
+                <BarChart data={data} margin={{ top: 4, right: 8, left: 0, bottom: 4 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke={theme.palette.divider} />
+                  <XAxis dataKey={xKey} tick={{ fontSize: 11 }} />
+                  <YAxis tick={{ fontSize: 11 }} width={50} />
+                  <Tooltip formatter={(v: any) => [`$${Number(v).toFixed(2)}`, "Total"]} />
                   <Legend />
-                  <Bar dataKey={yKey} fill="#f66f00ff" animationDuration={800} />
+                  <Bar dataKey={yKey} fill="#1976d2" radius={[4, 4, 0, 0]} animationDuration={800} />
                 </BarChart>
-              )}
-
-              {type === "line" && xKey && yKey && (
-                <LineChart data={data}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey={xKey} />
-                  <YAxis />
-                  <Tooltip />
+              ) : type === "line" && xKey && yKey ? (
+                <LineChart data={data} margin={{ top: 4, right: 8, left: 0, bottom: 4 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke={theme.palette.divider} />
+                  <XAxis dataKey={xKey} tick={{ fontSize: 11 }} />
+                  <YAxis tick={{ fontSize: 11 }} width={50} />
+                  <Tooltip formatter={(v: any) => [`$${Number(v).toFixed(2)}`, "Total"]} />
                   <Legend />
-                  <Line type="monotone" dataKey={yKey} stroke="#610901ff" strokeWidth={2} animationDuration={1000} />
+                  <Line
+                    type="monotone"
+                    dataKey={yKey}
+                    stroke="#1976d2"
+                    strokeWidth={2.5}
+                    dot={{ r: 4 }}
+                    activeDot={{ r: 6 }}
+                    animationDuration={1000}
+                  />
                 </LineChart>
-              )}
-
-              {type === "pie" && pieNameKey && pieValueKey && (
+              ) : type === "pie" && pieNameKey && pieValueKey ? (
                 <PieChart>
                   <Pie
                     data={data}
@@ -77,29 +78,23 @@ const ExpenseChart: React.FC<ExpenseChartProps> = ({
                     nameKey={pieNameKey}
                     cx="50%"
                     cy="50%"
-                    outerRadius={100}
-                    label
+                    outerRadius={isMobile ? 70 : 100}
+                    label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                    labelLine={!isMobile}
                   >
                     {data.map((_, index) => (
                       <Cell key={index} fill={COLORS[index % COLORS.length]} />
                     ))}
                   </Pie>
-                  <Tooltip />
+                  <Tooltip formatter={(v: any) => [`$${Number(v).toFixed(2)}`]} />
                   <Legend />
                 </PieChart>
-              )}
+              ) : <></>}
             </ResponsiveContainer>
           </Box>
         ) : (
-          <Box
-            flex={1}
-            display="flex"
-            alignItems="center"
-            justifyContent="center"
-          >
-            <Typography color="text.secondary">
-              No data available
-            </Typography>
+          <Box flex={1} display="flex" alignItems="center" justifyContent="center">
+            <Typography color="text.secondary" variant="body2">No data available</Typography>
           </Box>
         )}
       </Paper>
